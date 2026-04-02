@@ -3,38 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>iSchedule Pro | 智慧生產看板</title>
+    <title>iSchedule 生產排程表</title>
     <style>
         :root {
+            /* Apple UI 豐富配色 */
             --ios-blue: #007AFF;
+            --ios-orange: #FF9500;
             --ios-indigo: #5856D6;
-            --ios-purple: #AF52DE;
+            --ios-green: #34C759;
             --ios-gray: #8E8E93;
-            --glass-bg: rgba(255, 255, 255, 0.4);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.6);
+            
+            /* 玻璃擬態樣式 */
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.7);
             --text-main: #1D1D1F;
             --blur: blur(25px) saturate(190%);
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --glass-bg: rgba(28, 28, 30, 0.6);
+                --glass-bg: rgba(28, 28, 30, 0.7);
                 --glass-border: 1px solid rgba(255, 255, 255, 0.1);
                 --text-main: #F5F5F7;
             }
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "PingFang TC", sans-serif;
+            font-family: -apple-system, "SF Pro", "PingFang TC", sans-serif;
             background: linear-gradient(150deg, #D2E3FC 0%, #F3E5F5 100%);
             background-attachment: fixed;
             color: var(--text-main);
             margin: 0; padding: env(safe-area-inset-top) 16px;
-            transition: background 0.5s ease;
         }
 
-        /* 核心框架：PC 為橫向，手機為縱向 */
-        .app-grid {
+        /* 響應式框架：PC 橫向 / 手機縱向 */
+        .app-container {
             max-width: 1300px;
             margin: auto;
             display: grid;
@@ -44,121 +47,123 @@
         }
 
         @media (min-width: 1024px) {
-            .app-grid {
-                grid-template-columns: 340px 1fr;
+            .app-container {
+                grid-template-columns: 350px 1fr; /* PC 模式左欄控制、右欄看板 */
                 align-items: start;
             }
-            .title-area { grid-column: span 2; }
+            .header-section { grid-column: span 2; }
         }
 
-        .title-area h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1px; }
-        .title-area p { color: var(--ios-gray); margin-top: 5px; font-weight: 500; }
+        .header-section h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.2px; }
+        .header-section p { color: var(--ios-gray); margin-top: 5px; font-weight: 600; }
 
-        /* 玻璃擬態組件 */
+        /* 玻璃卡片 */
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: var(--blur);
             -webkit-backdrop-filter: var(--blur);
             border: var(--glass-border);
-            border-radius: 22px;
+            border-radius: 24px;
             padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.06);
         }
 
-        /* 表單元素 */
-        .field { margin-bottom: 18px; }
+        /* 表單與輸入 */
+        .form-item { margin-bottom: 18px; }
         label { font-size: 12px; font-weight: 700; color: var(--ios-gray); text-transform: uppercase; margin-bottom: 8px; display: block; }
         input, select {
-            width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.05);
-            border: none; padding: 14px; border-radius: 12px; font-size: 17px; color: var(--text-main); outline: none;
+            width: 100%; box-sizing: border-box; background: rgba(142, 142, 147, 0.12);
+            border: none; padding: 14px; border-radius: 14px; font-size: 17px; color: var(--text-main); outline: none;
         }
-        @media (prefers-color-scheme: dark) { input, select { background: rgba(255,255,255,0.1); } }
 
-        .btn-add {
+        .btn-submit {
             background: var(--ios-blue); color: white; border: none; width: 100%; padding: 18px;
-            border-radius: 16px; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.2s;
-            box-shadow: 0 5px 15px rgba(0,122,255,0.3);
+            border-radius: 18px; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3);
         }
-        .btn-add:active { transform: scale(0.96); }
+        .btn-submit:active { transform: scale(0.96); }
 
-        /* 甘特圖容器 */
-        .gantt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
-        .gantt-engine { min-width: 900px; position: relative; padding-top: 40px; padding-bottom: 10px; }
+        /* 甘特圖可視化核心 */
+        .timeline-scroll { overflow-x: auto; border-radius: 15px; }
+        .timeline-canvas { min-width: 900px; position: relative; padding: 40px 0 10px; }
+        
+        .time-labels { display: flex; margin-left: 80px; position: absolute; top: 10px; width: calc(100% - 80px); }
+        .hour-tick { flex: 1; text-align: center; font-size: 10px; color: var(--ios-gray); border-left: 1px solid rgba(0,0,0,0.05); }
 
-        /* 時間軸刻度 */
-        .time-scale { display: flex; margin-left: 80px; position: absolute; top: 10px; width: calc(100% - 80px); }
-        .hour-tick { flex: 1; text-align: center; font-size: 10px; color: var(--ios-gray); border-left: 1px solid rgba(142,142,147,0.1); }
-
-        /* 軌道樣式 */
         .track {
-            height: 65px; margin-bottom: 12px; background: rgba(142,142,147,0.05);
-            border-radius: 15px; display: flex; align-items: center; position: relative;
+            height: 70px; margin-bottom: 15px; background: rgba(142, 142, 147, 0.05);
+            border-radius: 16px; display: flex; align-items: center; position: relative;
         }
-        .track-label { width: 80px; text-align: center; font-weight: 800; font-size: 13px; color: var(--ios-indigo); z-index: 2; }
+        .track-header { width: 80px; text-align: center; font-weight: 800; font-size: 14px; color: var(--ios-indigo); z-index: 5; }
 
-        /* 拖拽方塊 */
+        /* 任務條 */
         .task-bar {
-            position: absolute; height: 48px; border-radius: 12px; color: white;
+            position: absolute; height: 50px; border-radius: 14px; color: white;
             padding: 0 12px; font-size: 13px; font-weight: 600;
             display: flex; flex-direction: column; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: grab; z-index: 10;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15); cursor: grab; z-index: 10;
         }
-        .task-bar:active { cursor: grabbing; transform: scale(1.02); }
+        .task-bar:active { cursor: grabbing; transform: scale(1.03); }
         .task-bar small { font-size: 10px; opacity: 0.8; margin-top: 2px; pointer-events: none; }
 
-        /* 豐富配色方案 */
-        .color-0 { background: linear-gradient(90deg, #FF9500, #FFCC00); } /* 早班-暖色 */
-        .color-8 { background: linear-gradient(90deg, #5856D6, #AF52DE); } /* 中班-靛色 */
-        .color-16 { background: linear-gradient(90deg, #1C1C1E, #636366); } /* 晚班-深色 */
+        /* 班別色彩 */
+        .color-morning { background: linear-gradient(90deg, #FF9500, #FFCC00); }
+        .color-afternoon { background: linear-gradient(90deg, #5856D6, #AF52DE); }
+        .color-night { background: linear-gradient(90deg, #1C1C1E, #636366); }
+
     </style>
 </head>
 <body>
 
-<div class="app-grid">
-    <div class="title-area">
-        <h1>智慧生產看板</h1>
-        <p id="todayStr">2026年4月2日 星期四</p>
+<div class="app-container">
+    <div class="header-section">
+        <h1>iSchedule 生產排程表</h1>
+        <p id="displayDate">2026年4月2日</p>
     </div>
 
     <div class="glass-card">
-        <div class="field">
-            <label>產品名稱 / 機台</label>
-            <input type="text" id="pName" placeholder="例如：A03 rPET餐盒">
+        <div class="form-item">
+            <label>產品名稱 / 機台編號</label>
+            <input type="text" id="pName" placeholder="例如：A01 洩壓餐盒">
         </div>
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px;">
-            <div class="field">
-                <label>初始班別</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-item">
+                <label>班別預設</label>
                 <select id="pShift">
                     <option value="0">早班 (08:00)</option>
                     <option value="8">中班 (16:00)</option>
                     <option value="16">晚班 (00:00)</option>
                 </select>
             </div>
-            <div class="field">
+            <div class="form-item">
                 <label>計畫工時 (H)</label>
                 <input type="number" id="pHours" value="4" step="0.5">
             </div>
         </div>
-        <button class="btn-add" onclick="addNewTask()">加入今日排程</button>
-        <p style="font-size: 11px; color: var(--ios-gray); margin-top: 15px; line-height: 1.5;">
-            * 系統會自動記錄您的輸入內容。<br>
-            * 加入後可直接在甘特圖上「橫向拖移」微調時間。
-        </p>
+        <button class="btn-submit" onclick="addTask()">確認加入排程</button>
+        
+        <div style="margin-top: 25px; font-size: 11px; color: var(--ios-gray); line-height: 1.6;">
+            <strong>操作提示：</strong><br>
+            • 加入後可直接在右側看板「左右拖移」調整時段。<br>
+            • 系統將自動記憶您最後輸入的產品與工時。<br>
+            • 每個小格磁吸對齊單位為 30 分鐘。
+        </div>
     </div>
 
-    <div class="glass-card" style="padding: 15px;">
-        <div class="gantt-scroll">
-            <div class="gantt-engine" id="ganttBody">
-                <div class="time-scale" id="scaleLabels"></div>
+    <div class="glass-card">
+        <label>今日生產時間軸 (拖拽微調)</label>
+        <div class="timeline-scroll">
+            <div class="timeline-canvas" id="canvasArea">
+                <div class="time-labels" id="hourMarkers"></div>
                 
-                <div class="track" id="track-0" ondrop="drop(event)" ondragover="allow(event)">
-                    <div class="track-label">早班</div>
+                <div class="track" id="tr-0" ondrop="drop(event)" ondragover="allow(event)">
+                    <div class="track-header">早班</div>
                 </div>
-                <div class="track" id="track-8" ondrop="drop(event)" ondragover="allow(event)">
-                    <div class="track-label">中班</div>
+                <div class="track" id="tr-8" ondrop="drop(event)" ondragover="allow(event)">
+                    <div class="track-header">中班</div>
                 </div>
-                <div class="track" id="track-16" ondrop="drop(event)" ondragover="allow(event)">
-                    <div class="track-label">晚班</div>
+                <div class="track" id="tr-16" ondrop="drop(event)" ondragover="allow(event)">
+                    <div class="track-header">晚班</div>
                 </div>
             </div>
         </div>
@@ -166,22 +171,19 @@
 </div>
 
 <script>
-    // 1. 初始化時間軸與記憶
-    const labels = document.getElementById('scaleLabels');
-    for(let i=0; i<24; i++) labels.innerHTML += `<div class="hour-tick">${i}:00</div>`;
+    // 1. 初始化刻度與記憶
+    const markers = document.getElementById('hourMarkers');
+    for(let i=0; i<24; i++) markers.innerHTML += `<div class="hour-tick">${i}:00</div>`;
 
     window.onload = () => {
-        // 讀取記憶內容
-        if(localStorage.getItem('savedName')) document.getElementById('pName').value = localStorage.getItem('savedName');
-        if(localStorage.getItem('savedHours')) document.getElementById('pHours').value = localStorage.getItem('savedHours');
-        
-        const d = new Date();
-        document.getElementById('todayStr').innerText = d.toLocaleDateString('zh-TW', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
+        if(localStorage.getItem('lastPName')) document.getElementById('pName').value = localStorage.getItem('lastPName');
+        if(localStorage.getItem('lastPHours')) document.getElementById('pHours').value = localStorage.getItem('lastPHours');
+        document.getElementById('displayDate').innerText = new Date().toLocaleDateString('zh-TW', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
     };
 
-    // 2. 音效回饋 (iOS Style)
+    // 2. 音效系統
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playTick(f) {
+    function playSound(f) {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -191,74 +193,75 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.1);
     }
 
-    // 拖拽運算核心
-    let dragOffsetX = 0;
-    let taskCounter = 0;
+    // 3. 拖拽核心
+    let offsetX = 0;
+    let count = 0;
 
     function allow(e) { e.preventDefault(); }
 
-    function addNewTask() {
-        const name = document.getElementById('pName').value || "未命名";
+    function addTask() {
+        const name = document.getElementById('pName').value || "未命名產品";
         const hours = parseFloat(document.getElementById('pHours').value);
         const shift = document.getElementById('pShift').value;
 
-        // 寫入記憶
-        localStorage.setItem('savedName', name);
-        localStorage.setItem('savedHours', hours);
+        // 記憶輸入
+        localStorage.setItem('lastPName', name);
+        localStorage.setItem('lastPHours', hours);
 
-        taskCounter++;
-        const id = "tk-" + taskCounter;
+        count++;
+        const id = "tk-" + count;
         const bar = document.createElement('div');
         bar.id = id;
-        bar.className = `task-bar color-${shift}`;
         bar.draggable = true;
+        
+        // 色彩邏輯
+        let color = "color-morning";
+        if(shift == "8") color = "color-afternoon";
+        if(shift == "16") color = "color-night";
+        bar.className = `task-bar ${color}`;
+        
+        const canvasW = document.getElementById('canvasArea').offsetWidth - 80;
+        const hrW = canvasW / 24;
+        bar.style.width = (hours * hrW) + "px";
+        bar.style.left = "80px"; 
 
-        // 計算寬度
-        const canvasWidth = document.getElementById('ganttBody').offsetWidth - 80;
-        const hrWidth = canvasWidth / 24;
-        bar.style.width = (hours * hrWidth) + "px";
-        bar.style.left = "80px"; // 預設起始
-
-        bar.innerHTML = `<span>${name}</span><small id="${id}-info">00:00 (${hours}H)</small>`;
-
+        bar.innerHTML = `<span>${name}</span><small id="${id}-txt">00:00 (${hours}H)</small>`;
+        
         bar.ondragstart = (e) => {
             e.dataTransfer.setData("text", e.target.id);
-            // 修正拖拽點位移
-            dragOffsetX = e.clientX - e.target.getBoundingClientRect().left;
+            offsetX = e.clientX - e.target.getBoundingClientRect().left;
         };
 
-        document.getElementById('track-' + shift).appendChild(bar);
-        playTick(1000);
+        document.getElementById('tr-' + shift).appendChild(bar);
+        playSound(1000);
     }
 
     function drop(e) {
         e.preventDefault();
         const id = e.dataTransfer.getData("text");
-        const bar = document.getElementById(id);
+        const el = document.getElementById(id);
         const track = e.currentTarget;
         const rect = track.getBoundingClientRect();
-
-        const canvasWidth = rect.width - 80;
-        const hrWidth = canvasWidth / 24;
         
-        let x = e.clientX - rect.left - dragOffsetX;
+        const hrW = (rect.width - 80) / 24;
+        let x = e.clientX - rect.left - offsetX;
         
-        // 磁吸邏輯 (對齊 30 分鐘)
-        const snap = hrWidth / 2;
-        let finalX = Math.round((x - 80) / snap) * snap + 80;
-        finalX = Math.max(80, Math.min(finalX, rect.width - bar.offsetWidth));
+        // 30 分鐘磁吸 (Snap)
+        const snapStep = hrW / 2;
+        let finalX = Math.round((x - 80) / snapStep) * snapStep + 80;
+        finalX = Math.max(80, Math.min(finalX, rect.width - el.offsetWidth));
+        
+        el.style.left = finalX + "px";
+        track.appendChild(el);
 
-        bar.style.left = finalX + "px";
-        track.appendChild(bar);
-
-        // 更新顯示文字
-        const startH = ((finalX - 80) / hrWidth).toFixed(1);
-        const h = Math.floor(startH);
-        const m = (startH % 1 * 60).toFixed(0).padStart(2, '0');
-        const dur = (bar.offsetWidth / hrWidth).toFixed(1);
-        document.getElementById(id + "-info").innerText = `${h}:${m} (${dur}H)`;
-
-        playTick(600);
+        // 更新 UI 時間文字
+        const startTotal = ((finalX - 80) / hrW).toFixed(1);
+        const hh = Math.floor(startTotal);
+        const mm = (startTotal % 1 * 60).toFixed(0).padStart(2, '0');
+        const d = (el.offsetWidth / hrW).toFixed(1);
+        document.getElementById(id + "-txt").innerText = `${hh}:${mm} (${d}H)`;
+        
+        playSound(700);
     }
 </script>
 
