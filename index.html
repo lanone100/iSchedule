@@ -2,144 +2,251 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>iSchedule 生產排程表 - 模式切換版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能生產排程系統</title>
     <style>
         :root {
-            /* 預設淺色模式變數 */
-            --bg-main: linear-gradient(150deg, #D2E3FC 0%, #F3E5F5 100%);
-            --glass-bg: rgba(255, 255, 255, 0.45);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.7);
-            --text-primary: #1D1D1F;
-            --text-secondary: #8E8E93;
-            --input-fill: rgba(0, 0, 0, 0.05);
-            --blur-val: blur(30px) saturate(200%);
-            --ios-blue: #007AFF;
+            --bg-gradient: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+            --glass-bg: rgba(255, 255, 255, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-color: #1d1d1f;
+            --accent-color: #0071e3;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
         }
 
-        /* 當使用者系統開啟「深色模式」時自動覆蓋 */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-main: linear-gradient(150deg, #000000 0%, #1C1C1E 100%);
-                --glass-bg: rgba(28, 28, 30, 0.75);
-                --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-                --text-primary: #F5F5F7;
-                --text-secondary: #AEAEB2;
-                --input-fill: rgba(255, 255, 255, 0.1);
-            }
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+            --glass-bg: rgba(0, 0, 0, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #f5f5f7;
+            --accent-color: #0a84ff;
         }
 
-        /* 基礎樣式優化 */
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
         body {
-            font-family: -apple-system, "SF Pro", "PingFang TC", sans-serif;
-            background: var(--bg-main);
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg-gradient);
             background-attachment: fixed;
-            color: var(--text-primary);
-            margin: 0; padding: 20px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-color);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
-        .glass-card {
+        /* 玻璃擬態容器 */
+        .glass-container {
+            width: 100%;
+            max-width: 1100px;
             background: var(--glass-bg);
-            backdrop-filter: var(--blur-val);
-            -webkit-backdrop-filter: var(--blur-val);
-            border: var(--glass-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
             border-radius: 24px;
+            box-shadow: var(--card-shadow);
             padding: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            animation: fadeIn 0.8s ease-out;
         }
 
-        /* PC 與手機的響應式橫向佈局切換 */
-        .app-layout {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h2 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+
+        /* 響應式佈局切換 */
+        .main-content {
             display: grid;
-            grid-template-columns: 1fr;
             gap: 20px;
-            max-width: 1400px;
-            margin: auto;
+            grid-template-columns: 1fr; /* 手機預設：直式 */
         }
 
-        @media (min-width: 1024px) {
-            .app-layout {
-                grid-template-columns: 350px 1fr; /* PC 橫式轉移 */
+        @media (min-width: 850px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr; /* PC：橫式雙欄 */
             }
         }
 
-        /* 輸入框適配 */
-        input, select {
-            width: 100%; box-sizing: border-box;
-            background: var(--input-fill);
-            border: none; padding: 14px; border-radius: 14px;
-            color: var(--text-primary); font-size: 17px;
-            outline: none; margin-top: 8px;
+        /* 表單與表格樣式 */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid var(--glass-border);
         }
 
-        /* 任務方塊 - 強化深色模式對比 */
-        .task-bar {
-            position: absolute; height: 75px; border-radius: 16px; color: white;
-            padding: 12px; font-size: 12px; font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.9rem; margin-bottom: 6px; opacity: 0.8; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
         }
-        
-        /* 模式切換按鈕 (手動預留) */
-        .mode-toggle {
-            position: fixed; bottom: 30px; right: 30px;
-            width: 50px; height: 50px; border-radius: 25px;
-            background: var(--ios-blue); color: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 5px 15px rgba(0,122,255,0.4);
-            cursor: pointer; z-index: 100;
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: transform 0.1s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--text-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            background: rgba(0, 184, 148, 0.2);
+            color: #00b894;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-<div class="app-layout">
-    <div class="sidebar">
-        <div class="glass-card">
-            <h2 style="margin:0 0 15px;">排程控制</h2>
-            <label style="color:var(--text-secondary); font-size:12px; font-weight:bold;">生產資訊</label>
-            <input type="text" id="pMold" placeholder="模具號碼: M-2026-X">
-            <input type="text" id="pPart" placeholder="產品料號: PET-882">
-            <button onclick="alert('已發布')" style="width:100%; margin-top:20px; background:var(--ios-blue); border:none; color:white; padding:15px; border-radius:15px; font-weight:bold;">發布排程</button>
-        </div>
-    </div>
+    <div class="glass-container">
+        <header>
+            <h2>Production Schedule</h2>
+            <button class="theme-toggle" onclick="toggleTheme()">切換模式</button>
+        </header>
 
-    <div class="main-content">
-        <div class="glass-card" style="height: 400px; position: relative;">
-            <p>機台看板 - 2026/04/02</p>
-            <div class="task-bar" style="top:100px; left:120px; width:200px; background: linear-gradient(135deg, #5856D6, #AF52DE);">
-                <b>射出機 A01</b><br>
-                <span>M-2026-X / PET-882</span>
+        <div class="main-content">
+            <div class="card">
+                <div class="input-group">
+                    <label>生產線編號</label>
+                    <input type="text" id="lineId" placeholder="例如：PET-01" class="save-data">
+                </div>
+                <div class="input-group">
+                    <label>預計產量 (pcs)</label>
+                    <input type="number" id="targetQty" placeholder="0" class="save-data">
+                </div>
+                <div class="input-group">
+                    <label>標準週期 (sec)</label>
+                    <input type="number" id="cycleTime" placeholder="0.0" step="0.1" class="save-data">
+                </div>
+                <button class="btn" onclick="calculateSchedule()">開始計算並儲存</button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0">計算結果摘要</h3>
+                <table>
+                    <tr>
+                        <th>項目</th>
+                        <th>數值</th>
+                    </tr>
+                    <tr>
+                        <td>所需總時數</td>
+                        <td><span id="totalHours">0</span> 小時</td>
+                    </tr>
+                    <tr>
+                        <td>預計完工日</td>
+                        <td><span id="finishDate" class="result-badge">--/--</span></td>
+                    </tr>
+                </table>
+                <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 15px;">
+                    * 系統已自動記憶您的輸入內容。
+                </p>
             </div>
         </div>
     </div>
-</div>
 
-<div class="mode-toggle" onclick="toggleTheme()">🌓</div>
+    <audio id="clickSound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
 
-<script>
-    // 記憶功能：儲存內容至 LocalStorage
-    document.querySelectorAll('input').forEach(input => {
-        input.value = localStorage.getItem(input.id) || '';
-        input.addEventListener('input', (e) => {
-            localStorage.setItem(e.target.id, e.target.value);
-        });
-    });
+    <script>
+        // 1. 初始化與記憶功能
+        window.onload = () => {
+            const inputs = document.querySelectorAll('.save-data');
+            inputs.forEach(input => {
+                const savedValue = localStorage.getItem(input.id);
+                if (savedValue) input.value = savedValue;
+            });
+            
+            // 檢查深色模式偏好
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+        };
 
-    // 手動強制切換 (僅用於測試，預設已跟隨系統)
-    function toggleTheme() {
-        const currentBg = getComputedStyle(document.documentElement).getPropertyValue('--bg-main');
-        if (currentBg.includes('#000000')) {
-            document.documentElement.style.setProperty('--bg-main', 'linear-gradient(150deg, #D2E3FC 0%, #F3E5F5 100%)');
-            document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.45)');
-            document.documentElement.style.setProperty('--text-primary', '#1D1D1F');
-        } else {
-            document.documentElement.style.setProperty('--bg-main', 'linear-gradient(150deg, #000000 0%, #1C1C1E 100%)');
-            document.documentElement.style.setProperty('--glass-bg', 'rgba(28, 28, 30, 0.75)');
-            document.documentElement.style.setProperty('--text-primary', '#F5F5F7');
+        // 2. 計算邏輯與儲存
+        function calculateSchedule() {
+            playSound();
+            const qty = parseFloat(document.getElementById('targetQty').value) || 0;
+            const cycle = parseFloat(document.getElementById('cycleTime').value) || 0;
+            
+            // 公式：(產量 * 週期) / 3600秒 = 總小時
+            const hours = ((qty * cycle) / 3600).toFixed(2);
+            document.getElementById('totalHours').innerText = hours;
+
+            // 簡易完工日期預估 (當前時間 + 小時)
+            const finish = new Date();
+            finish.setHours(finish.getHours() + parseFloat(hours));
+            document.getElementById('finishDate').innerText = finish.toLocaleString('zh-TW', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+
+            // 記憶輸入內容
+            const inputs = document.querySelectorAll('.save-data');
+            inputs.forEach(input => {
+                localStorage.setItem(input.id, input.value);
+            });
         }
-    }
-</script>
 
+        // 3. 主題切換
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            playSound();
+        }
+
+        // 4. 音效回饋
+        function playSound() {
+            const audio = document.getElementById('clickSound');
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log("Audio play blocked"));
+        }
+    </script>
 </body>
 </html>
