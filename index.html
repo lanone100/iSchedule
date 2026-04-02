@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>iSchedule Pro | 智慧生產看板</title>
+    <style>
+        :root {
+            /* Apple 系統配色 - 豐富且高飽和度 */
+            --ios-blue: #007AFF;
+            --ios-green: #34C759;
+            --ios-orange: #FF9500;
+            --ios-indigo: #5856D6;
+            --ios-pink: #FF2D55;
+            --ios-gray: #8E8E93;
+            
+            /* Light Mode 參數 */
+            --bg-gradient: linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 50%, #E8F5E9 100%);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.6);
+            --text-primary: #1D1D1F;
+            --text-secondary: #6E6E73;
+            --input-bg: rgba(0, 0, 0, 0.05);
+            --blur-strength: blur(25px) saturate(190%);
+            --card-shadow: 0 10px 40px rgba(0,0,0,0.06);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-gradient: linear-gradient(135deg, #000000 0%, #1C1C1E 100%);
+                --glass-bg: rgba(28, 28, 30, 0.6);
+                --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+                --text-primary: #F5F5F7;
+                --text-secondary: #8E8E93;
+                --input-bg: rgba(255, 255, 255, 0.1);
+                --card-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "PingFang TC", sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            margin: 0; padding: env(safe-area-inset-top) 16px;
+            overflow-x: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 響應式框架：PC 模式為橫向擺設 */
+        .app-container {
+            max-width: 1200px;
+            margin: auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            padding: 24px 0;
+        }
+
+        @media (min-width: 1024px) {
+            .app-container {
+                grid-template-columns: 360px 1fr; /* PC 模式左側控制、右側顯示 */
+                align-items: start;
+            }
+            .header-area { grid-column: span 2; }
+        }
+
+        .header-area h1 { font-size: 34px; font-weight: 800; margin: 0; letter-spacing: -1.2px; }
+        .header-area p { color: var(--text-secondary); font-size: 17px; margin-top: 6px; font-weight: 500; }
+
+        /* 玻璃卡片組件 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur-strength);
+            -webkit-backdrop-filter: var(--blur-strength);
+            border: var(--glass-border);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+        }
+
+        /* 表單設計 */
+        .control-group { margin-bottom: 20px; }
+        label { font-size: 12px; font-weight: 700; color: var(--ios-gray); text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+        
+        input, select {
+            width: 100%; box-sizing: border-box; background: var(--input-bg);
+            border: none; padding: 14px; border-radius: 14px; font-size: 17px;
+            color: var(--text-primary); outline: none; transition: 0.3s;
+        }
+        input:focus { background: rgba(0, 122, 255, 0.1); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
+
+        .btn-add {
+            background: var(--ios-blue); color: white; border: none; width: 100%; padding: 18px;
+            border-radius: 18px; font-size: 18px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3);
+        }
+        .btn-add:active { transform: scale(0.96); opacity: 0.9; }
+
+        /* 甘特圖可視化 */
+        .gantt-scroll { overflow-x: auto; padding-bottom: 10px; }
+        .gantt-canvas { min-width: 900px; position: relative; padding-top: 40px; }
+        
+        .time-header { display: flex; margin-left: 80px; position: absolute; top: 10px; width: calc(100% - 80px); }
+        .hour-tick { flex: 1; text-align: center; font-size: 10px; color: var(--ios-gray); border-left: 0.5px solid rgba(142,142,147,0.2); }
+
+        .track {
+            height: 70px; margin-bottom: 12px; background: rgba(142, 142, 147, 0.05);
+            border-radius: 16px; display: flex; align-items: center; position: relative;
+        }
+        .track-label { width: 80px; text-align: center; font-weight: 800; font-size: 14px; color: var(--ios-indigo); z-index: 5; }
+
+        /* 任務塊樣式 - 豐富配色 */
+        .task-bar {
+            position: absolute; height: 50px; border-radius: 14px; color: white;
+            padding: 0 12px; font-size: 13px; font-weight: 600;
+            display: flex; flex-direction: column; justify-content: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15); cursor: grab; z-index: 10;
+        }
+        .task-bar:active { cursor: grabbing; transform: scale(1.03); }
+        .task-bar small { font-size: 10px; opacity: 0.8; font-weight: 400; margin-top: 2px; pointer-events: none; }
+
+        /* 不同班別的色彩預設 */
+        .morning-color { background: linear-gradient(90deg, #FF9500, #FFCC00); }
+        .afternoon-color { background: linear-gradient(90deg, #5856D6, #AF52DE); }
+        .night-color { background: linear-gradient(90deg, #1D1D1F, #48484A); }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header-area">
+        <h1 id="title">智慧生產看板</h1>
+        <p id="dateDisp">2026年4月2日</p>
+    </div>
+
+    <div class="glass-card">
+        <div class="control-group">
+            <label>機台 / 產品名稱</label>
+            <input type="text" id="pName" placeholder="例如：A01 rPET餐盒">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="control-group">
+                <label>班別</label>
+                <select id="pShift">
+                    <option value="0">早班 (08:00)</option>
+                    <option value="8">中班 (16:00)</option>
+                    <option value="16">晚班 (00:00)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>預計工時 (H)</label>
+                <input type="number" id="pHours" value="4" step="0.5">
+            </div>
+        </div>
+        <button class="btn-add" onclick="createTask()">加入排程佈局</button>
+        
+        <div style="margin-top: 25px; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+            <strong>公式依據：</strong><br>
+            總工時 = (計畫量 / 產速) + 換線損失<br>
+            <em>* 本介面支援拖拽即時調整時間</em>
+        </div>
+    </div>
+
+    <div class="glass-card">
+        <label>生產負荷甘特圖 (橫向滑動/拖曳調整)</label>
+        <div class="gantt-scroll">
+            <div class="gantt-canvas" id="canvas">
+                <div class="time-header" id="ticks"></div>
+                
+                <div class="track" id="track-0" ondrop="drop(event)" ondragover="allow(event)">
+                    <div class="track-label">早班</div>
+                </div>
+                <div class="track" id="track-8" ondrop="drop(event)" ondragover="allow(event)">
+                    <div class="track-label">中班</div>
+                </div>
+                <div class="track" id="track-16" ondrop="drop(event)" ondragover="allow(event)">
+                    <div class="track-label">晚班</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. 初始化時間軸刻度
+    const ticks = document.getElementById('ticks');
+    for(let i=0; i<24; i++) {
+        ticks.innerHTML += `<div class="hour-tick">${i}:00</div>`;
+    }
+
+    // 2. 記憶功能：載入前次輸入內容
+    window.onload = () => {
+        if(localStorage.getItem('pName')) document.getElementById('pName').value = localStorage.getItem('pName');
+        if(localStorage.getItem('pHours')) document.getElementById('pHours').value = localStorage.getItem('pHours');
+        document.getElementById('dateDisp').innerText = new Date().toLocaleDateString('zh-TW', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
+    };
+
+    // 3. 音效回饋
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    // 4. 拖拽邏輯
+    let dragOffsetX = 0;
+    let taskID = 0;
+
+    function allow(e) { e.preventDefault(); }
+
+    function createTask() {
+        const name = document.getElementById('pName').value || "未命名";
+        const hrs = parseFloat(document.getElementById('pHours').value);
+        const shift = document.getElementById('pShift').value;
+
+        // 儲存到記憶
+        localStorage.setItem('pName', name);
+        localStorage.setItem('pHours', hrs);
+
+        taskID++;
+        const id = "task-" + taskID;
+        const bar = document.createElement('div');
+        bar.id = id;
+        bar.draggable = true;
+        
+        // 配色邏輯
+        let colorClass = "morning-color";
+        if(shift == "8") colorClass = "afternoon-color";
+        if(shift == "16") colorClass = "night-color";
+        
+        bar.className = `task-bar ${colorClass}`;
+        
+        const hourWidth = (document.getElementById('canvas').offsetWidth - 80) / 24;
+        bar.style.width = (hrs * hourWidth) + "px";
+        bar.style.left = "80px"; 
+
+        bar.innerHTML = `${name} <small id="${id}-t">開始 00:00 (${hrs}h)</small>`;
+        
+        bar.ondragstart = (e) => {
+            e.dataTransfer.setData("text", e.target.id);
+            dragOffsetX = e.clientX - e.target.getBoundingClientRect().left;
+        };
+
+        document.getElementById('track-' + shift).appendChild(bar);
+        playSound(880);
+    }
+
+    function drop(e) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text");
+        const el = document.getElementById(id);
+        const track = e.currentTarget;
+        const rect = track.getBoundingClientRect();
+        
+        const hourWidth = (rect.width - 80) / 24;
+        let x = e.clientX - rect.left - dragOffsetX;
+        
+        // 磁吸效果 (每 30 分鐘)
+        let snappedX = Math.round((x - 80) / (hourWidth / 2)) * (hourWidth / 2) + 80;
+        snappedX = Math.max(80, Math.min(snappedX, rect.width - el.offsetWidth));
+        
+        el.style.left = snappedX + "px";
+        track.appendChild(el);
+
+        // 更新數據
+        const startH = ((snappedX - 80) / hourWidth).toFixed(1);
+        const h = Math.floor(startH);
+        const m = (startH % 1 * 60).toFixed(0).padStart(2, '0');
+        const d = (el.offsetWidth / hourWidth).toFixed(1);
+        document.getElementById(id + "-t").innerText = `開始 ${h}:${m} (${d}h)`;
+        
+        playSound(660);
+    }
+</script>
+
+</body>
+</html>
